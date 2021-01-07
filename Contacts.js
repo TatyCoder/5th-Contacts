@@ -1,4 +1,5 @@
 import { Address } from './Address.js';
+import { contacts } from './globals.js';
 
 export class Contact {
     id;
@@ -6,7 +7,7 @@ export class Contact {
     address;
     phone;
     isNewContact = false;
-
+    
     constructor(id /* Number */, name /* String */, address /* Address object */, phone /* String */) {
         if (id === null) {
             this.id = Math.random().toString()
@@ -48,13 +49,34 @@ export class Contact {
 
         // Making cancelUpdateContactButton works:
         const cancelUpdateContactButton = document.getElementById('cancelUpdateContactButton');
-        cancelUpdateContactButton.addEventListener('click', showAllContacts);
+        cancelUpdateContactButton.addEventListener('click', window.showAllContacts);
 
         // Making saveUpdateContactButton works:
         const saveUpdateContactButton = document.getElementById('saveUpdateContactButton');
-        saveUpdateContactButton.addEventListener('click', this.saveUpdatedContactHandler);
+        saveUpdateContactButton.addEventListener('click', this.saveUpdatedContactHandler.bind(this));
     }
 
+    async fetchContacts() {  
+        // First delete all the contacts in the array
+        contacts.splice(0, contacts.length);
+
+        let response = await fetch('https://phone-contacts-service-cgpil.ondigitalocean.app/getAllContacts', {
+            method: 'GET'
+        });
+        const contactJson = await response.json();
+        for (const cj of contactJson) {
+            const myContact = new Contact(
+                cj.id,
+                cj.name,
+                new Address(cj.address.street, cj.address.city, cj.address.state, cj.address.zip),
+                cj.phone
+            )
+            contacts.push(myContact);
+        }
+        console.log(contacts);
+        window.showAllContacts();
+    }
+    
     saveUpdatedContactHandler = async () => {
         this.name = document.getElementById('name').value;
         this.address.street = document.getElementById('street').value;
@@ -89,7 +111,7 @@ export class Contact {
             console.log(contactJson);
         }
 
-        showAllContacts();
+        window.showAllContacts();
     }
 
     deleteContactHandler = async () => {
@@ -104,7 +126,7 @@ export class Contact {
         const contactJson = await response.json();
         console.log(contactJson);
     
-       fetchContacts();
+       this.fetchContacts();
     }
     
     render() {
